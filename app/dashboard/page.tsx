@@ -21,7 +21,7 @@ export default function Dashboard() {
   -------------------------- */
 
   const loadEvents = () => {
-    fetch("http://localhost:4000/track")
+    fetch("https://monitor.creonox.com/track")
       .then((res) => res.json())
       .then((data) => setEvents(data));
   };

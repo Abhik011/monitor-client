@@ -1,0 +1,13 @@
+export default function Errors() {
+  return (
+    <div>
+
+      <h1 className="text-2xl font-bold mb-6">Error Logs</h1>
+
+      <div className="bg-white p-6 rounded shadow">
+        No errors recorded
+      </div>
+
+    </div>
+  );
+}

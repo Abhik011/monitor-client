@@ -1,6 +1,11 @@
 const API = process.env.NEXT_PUBLIC_API_URL;
 
-export async function api(path, method = "GET", data = null) {
+export async function api(
+  path: string,
+  method: string = "GET",
+  data: any = null
+) {
+
 
   const token = localStorage.getItem("token");
 

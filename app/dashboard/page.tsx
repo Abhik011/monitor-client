@@ -12,29 +12,91 @@ import {
   Bar,
   ResponsiveContainer,
 } from "recharts";
+import io from "socket.io-client";
 
 export default function Dashboard() {
+
   const [events, setEvents] = useState<any[]>([]);
+  const [projectId, setProjectId] = useState<string | null>(null);
+
+  const API = process.env.NEXT_PUBLIC_API_URL;
+
+  /* --------------------------
+     LOAD PROJECT
+  -------------------------- */
+
+  useEffect(() => {
+
+    const storedProject = localStorage.getItem("projectId");
+
+    if (storedProject) {
+      setProjectId(storedProject);
+    }
+
+  }, []);
 
   /* --------------------------
      FETCH EVENTS
   -------------------------- */
 
-  const loadEvents = () => {
-    fetch("https://monitor.creonox.com/data/track")
-      .then((res) => res.json())
-      .then((data) => setEvents(data));
+  const loadEvents = async () => {
+
+    if (!projectId) return;
+
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+      `${API}/events?projectId=${projectId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    setEvents(data.events || []);
+
   };
 
+  /* --------------------------
+     SOCKET REALTIME
+  -------------------------- */
+
   useEffect(() => {
+
+    const socket = io(API);
+
+    socket.on("new-event", (event) => {
+
+      if (event.projectId === projectId) {
+
+        setEvents((prev) => [event, ...prev]);
+
+      }
+
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+
+  }, [projectId]);
+
+  /* --------------------------
+     AUTO REFRESH
+  -------------------------- */
+
+  useEffect(() => {
+
     loadEvents();
 
     const interval = setInterval(loadEvents, 5000);
 
     return () => clearInterval(interval);
-  }, []);
 
-
+  }, [projectId]);
 
   /* --------------------------
      METRICS
@@ -85,8 +147,11 @@ export default function Dashboard() {
   events
     .filter((e) => e.type === "error" || (e.type === "api" && e.status >= 400))
     .forEach((e) => {
+
       const country = e.country || "Unknown";
+
       countryCount[country] = (countryCount[country] || 0) + 1;
+
     });
 
   const countryChart = Object.keys(countryCount).map((c) => ({
@@ -101,18 +166,22 @@ export default function Dashboard() {
   const sessions: any = {};
 
   events.forEach((e) => {
+
     if (!e.sessionId) return;
 
     sessions[e.sessionId] = (sessions[e.sessionId] || 0) + 1;
+
   });
 
-  const sessionData = Object.keys(sessions).slice(0, 10).map((id) => ({
-    session: id.slice(0, 6),
-    events: sessions[id],
-  }));
+  const sessionData = Object.keys(sessions)
+    .slice(0, 10)
+    .map((id) => ({
+      session: id.slice(0, 6),
+      events: sessions[id],
+    }));
 
   /* --------------------------
-     ERROR LIST
+     ERROR GROUPING
   -------------------------- */
 
   const errorEvents = events.filter(
@@ -125,193 +194,212 @@ export default function Dashboard() {
   const errorsByPage: any = {};
 
   errorEvents.forEach((e) => {
+
     const page = e.page || "Unknown";
 
     if (!errorsByPage[page]) {
+
       errorsByPage[page] = [];
+
     }
 
     errorsByPage[page].push(e);
+
   });
 
   return (
-    <div style={{ padding: 30, fontFamily: "Arial" }}>
-      <h1 style={{ fontSize: 28, marginBottom: 20 }}>
-        Monitoring Dashboard
-      </h1>
+    <div style={styles.wrapper}>
+      {/* MAIN */}
 
-      {/* METRICS */}
+      <div style={styles.main}>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4,1fr)",
-          gap: 20,
-          marginBottom: 40,
-        }}
-      >
-        <Card title="Total Events" value={totalEvents} />
-        <Card title="JS Errors" value={errors.length} />
-        <Card title="API Errors" value={apiErrors.length} />
-        <Card title="Slow APIs" value={slowApis.length} />
-      </div>
+        <h1 style={styles.title}>Monitoring Dashboard</h1>
 
-      {/* CHARTS */}
+        {/* METRICS */}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 40,
-        }}
-      >
-        {/* LATENCY */}
+        <div style={styles.metricGrid}>
 
-        <div>
-          <h3>API Latency</h3>
+          <Card title="Total Events" value={totalEvents} />
+          <Card title="JS Errors" value={errors.length} />
+          <Card title="API Errors" value={apiErrors.length} />
+          <Card title="Slow APIs" value={slowApis.length} />
 
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="latency"
-                stroke="#6366f1"
-              />
-            </LineChart>
-          </ResponsiveContainer>
         </div>
 
-        {/* EVENT TYPES */}
+        {/* CHARTS */}
 
-        <div>
-          <h3>Event Types</h3>
+        <div style={styles.chartGrid}>
+
+          <ChartCard title="API Latency">
+
+            <ResponsiveContainer width="100%" height={250}>
+
+              <LineChart data={chartData}>
+
+                <CartesianGrid stroke="#333" />
+
+                <XAxis dataKey="name" stroke="#aaa" />
+                <YAxis stroke="#aaa" />
+
+                <Tooltip />
+
+                <Line
+                  type="monotone"
+                  dataKey="latency"
+                  stroke="#6366f1"
+                />
+
+              </LineChart>
+
+            </ResponsiveContainer>
+
+          </ChartCard>
+
+          <ChartCard title="Event Types">
+
+            <ResponsiveContainer width="100%" height={250}>
+
+              <BarChart data={typeChart}>
+
+                <CartesianGrid stroke="#333" />
+
+                <XAxis dataKey="type" stroke="#aaa" />
+                <YAxis stroke="#aaa" />
+
+                <Tooltip />
+
+                <Bar dataKey="value" fill="#6366f1" />
+
+              </BarChart>
+
+            </ResponsiveContainer>
+
+          </ChartCard>
+
+        </div>
+
+        {/* COUNTRY */}
+
+        <ChartCard title="Errors by Country">
 
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={typeChart}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="type" />
-              <YAxis />
+
+            <BarChart data={countryChart}>
+
+              <CartesianGrid stroke="#333" />
+
+              <XAxis dataKey="country" stroke="#aaa" />
+              <YAxis stroke="#aaa" />
+
               <Tooltip />
-              <Bar dataKey="value" fill="#10b981" />
+
+              <Bar dataKey="value" fill="#f43f5e" />
+
             </BarChart>
+
           </ResponsiveContainer>
-        </div>
+
+        </ChartCard>
+
       </div>
 
-      {/* COUNTRY ERRORS */}
-
-      <div style={{ marginTop: 50 }}>
-        <h2>Errors by Country</h2>
-
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={countryChart}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="country" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="value" fill="#ef4444" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* SESSION EVENTS */}
-
-      <div style={{ marginTop: 50 }}>
-        <h2>Session Activity</h2>
-
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={sessionData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="session" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="events" fill="#f59e0b" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* ERROR LOGS */}
-
-      <div style={{ marginTop: 50 }}>
-        <h2>Error Logs</h2>
-
-        {Object.keys(errorsByPage).slice(0, 5).map((page) => (
-
-          <div key={page} style={{ marginTop: 20 }}>
-
-            <h3 style={{ marginBottom: 10 }}>
-              Page: {page}
-            </h3>
-
-            {errorsByPage[page].slice(0, 5).map((event: any) => (
-
-              <div
-                key={event._id}
-                style={{
-                  border: "1px solid #ddd",
-                  padding: 12,
-                  marginTop: 10,
-                  borderRadius: 8,
-                  background: "#fff5f5",
-                }}
-              >
-
-                <b style={{ color: "red" }}>
-                  {event.type.toUpperCase()}
-                </b>
-
-                <div>
-                  {event.message || event.api}
-                </div>
-
-                <div style={{ fontSize: 12 }}>
-                  Status: {event.status || "-"}
-                </div>
-
-                <div style={{ fontSize: 12 }}>
-                  Country: {event.country || "Unknown"}
-                </div>
-
-              </div>
-
-            ))}
-
-          </div>
-
-        ))}
-      </div>
     </div>
   );
 }
 
 /* --------------------------
-   CARD
+   COMPONENTS
 -------------------------- */
 
 function Card({ title, value }: any) {
-  return (
-    <div
-      style={{
-        border: "1px solid #ddd",
-        padding: 20,
-        borderRadius: 8,
-        background: "#fafafa",
-      }}
-    >
-      <div style={{ fontSize: 14 }}>{title}</div>
 
-      <div
-        style={{
-          fontSize: 26,
-          fontWeight: "bold",
-        }}
-      >
-        {value}
-      </div>
+  return (
+    <div style={styles.card}>
+
+      <div style={styles.cardTitle}>{title}</div>
+
+      <div style={styles.cardValue}>{value}</div>
+
     </div>
   );
+
 }
+
+function ChartCard({ title, children }: any) {
+
+  return (
+    <div style={styles.chartCard}>
+
+      <h3 style={{ marginBottom: 10 }}>{title}</h3>
+
+      {children}
+
+    </div>
+  );
+
+}
+
+/* --------------------------
+   STYLES
+-------------------------- */
+const styles: any = {
+
+  wrapper: {
+    display: "flex",
+    // background: "#f8fafc",
+    color: "#111827",
+    minHeight: "100vh",
+    fontFamily: "Inter, sans-serif",
+  },
+
+  main: {
+    flex: 1,
+    padding: 40,
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: 600,
+    marginBottom: 30,
+  },
+
+  metricGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+    gap: 20,
+    marginBottom: 40,
+  },
+
+  chartGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 30,
+  },
+
+  card: {
+    background: "#ffffff",
+    padding: 20,
+    borderRadius: 10,
+    border: "1px solid #e5e7eb",
+  },
+
+  cardTitle: {
+    fontSize: 13,
+    color: "#6b7280",
+  },
+
+  cardValue: {
+    fontSize: 26,
+    fontWeight: 700,
+    marginTop: 8,
+  },
+
+  chartCard: {
+    background: "#ffffff",
+    padding: 20,
+    borderRadius: 10,
+    border: "1px solid #e5e7eb",
+    marginTop: 20,
+  }
+
+};

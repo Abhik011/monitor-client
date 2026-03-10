@@ -16,7 +16,7 @@ export default function DevelopmentSection({ apiKey }: any) {
       <h3>1. Install SDK</h3>
 
       <pre className={styles.code}>
-{`<script src="https://monitor.creonox.com/sdk.js"></script>
+        {`<script src="https://monitor.creonox.com/sdk.js"></script>
 
 <script>
 Creonox.init({
@@ -28,13 +28,13 @@ Creonox.init({
       <h3>2. Optional: Identify Users</h3>
 
       <pre className={styles.code}>
-{`Creonox.setUser("user_123")`}
+        {`Creonox.setUser("user_123")`}
       </pre>
 
       <h3>3. Backend API Monitoring</h3>
 
       <pre className={styles.code}>
-{`fetch("https://monitor.creonox.com/track/${apiKey}", {
+        {`fetch("https://monitor.creonox.com/data/track/${apiKey}", {
   method: "POST",
   headers: {
     "Content-Type": "application/json"
@@ -51,7 +51,7 @@ Creonox.init({
       <h3>API Endpoint</h3>
 
       <div className={styles.endpoint}>
-        POST https://monitor.creonox.com/track/{apiKey}
+        POST https://monitor.creonox.com/data/track/{apiKey}
       </div>
 
     </div>

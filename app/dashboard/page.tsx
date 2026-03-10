@@ -10,7 +10,11 @@ import {
   CartesianGrid,
   BarChart,
   Bar,
+  ReferenceLine,
+  AreaChart,
+  Area,
   ResponsiveContainer,
+  Cell
 } from "recharts";
 import io from "socket.io-client";
 
@@ -234,41 +238,111 @@ export default function Dashboard() {
 
             <ResponsiveContainer width="100%" height={250}>
 
-              <LineChart data={chartData}>
+              <AreaChart data={chartData}>
 
-                <CartesianGrid stroke="#333" />
+                <defs>
 
-                <XAxis dataKey="name" stroke="#aaa" />
-                <YAxis stroke="#aaa" />
+                  <linearGradient id="goodLatency" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05} />
+                  </linearGradient>
 
-                <Tooltip />
+                  <linearGradient id="badLatency" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity={0.05} />
+                  </linearGradient>
 
-                <Line
-                  type="monotone"
-                  dataKey="latency"
-                  stroke="#6366f1"
+                </defs>
+
+                <XAxis
+                  dataKey="name"
+                  stroke="#9ca3af"
+                  tickLine={true}
+                  axisLine={false}
+                  tick={{ fontSize: 10 }}
+                  tickMargin={6}
                 />
 
-              </LineChart>
+                <YAxis
+                  stroke="#9ca3af"
+                  tickLine={true}
+                  axisLine={false}
+                  width={30}
+                  tick={{ fontSize: 10 }}
+                  tickMargin={6}
+                  tickFormatter={(v) => `${v}ms`}
+                />
+
+                <Tooltip
+                  contentStyle={{
+                    background: "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 8
+                  }}
+                />
+
+                <Area
+                  type="monotone"
+                  dataKey="latency"
+                  stroke={(chartData.some(d => d.latency > 2000)) ? "#ef4444" : "#3b82f6"}
+                  strokeWidth={3}
+                  fill={(chartData.some(d => d.latency > 2000)) ? "url(#badLatency)" : "url(#goodLatency)"}
+                  dot={false}
+                />
+
+              </AreaChart>
 
             </ResponsiveContainer>
 
           </ChartCard>
 
-          <ChartCard title="Event Types">
+          <ChartCard title="Event Types" >
 
             <ResponsiveContainer width="100%" height={250}>
 
               <BarChart data={typeChart}>
 
-                <CartesianGrid stroke="#333" />
+                <XAxis
+                  dataKey="type"
+                  axisLine={false}
+                  tickLine={false}
+                  stroke="#8b98ae"
+                   tick={{ fontSize: 10 }}
+                />
 
-                <XAxis dataKey="type" stroke="#aaa" />
-                <YAxis stroke="#aaa" />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  stroke="#9ca3af"
+                   tick={{ fontSize: 10 }}
+                />
 
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    background: "#ffffff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 8
+                  }}
+                />
 
-                <Bar dataKey="value" fill="#6366f1" />
+                <Bar
+                  dataKey="value"
+                  radius={[6, 6, 0, 0]}
+                  barSize={30}
+                >
+                  {typeChart.map((entry, index) => (
+                    <Cell
+                      key={index}
+                      fill={
+                        entry.type === "error"
+                          ? "#ef4444"
+                          : entry.type === "api_error"
+                            ? "#f59e0b"
+                            : "#6366f1"
+                      }
+                    />
+                  ))}
+                </Bar>
 
               </BarChart>
 
@@ -330,7 +404,17 @@ function ChartCard({ title, children }: any) {
   return (
     <div style={styles.chartCard}>
 
-      <h3 style={{ marginBottom: 10 }}>{title}</h3>
+      <h3 style={{
+          marginBottom: 10,
+          fontSize: 14,
+          fontWeight: 600,
+          color: "#374151",
+          fontFamily: "Inter, sans-serif",
+          letterSpacing: "0.2px"
+        }}
+        >
+          {title}
+          </h3>
 
       {children}
 

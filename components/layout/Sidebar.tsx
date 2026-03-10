@@ -12,8 +12,8 @@ export default function Sidebar() {
   const API =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-  const [projects,setProjects] = useState<any[]>([]);
-  const [selectedProject,setSelectedProject] = useState<string | null>(null);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
   const menu = [
     { name: "Dashboard", path: "/dashboard" },
@@ -31,10 +31,11 @@ export default function Sidebar() {
   useEffect(() => {
 
     const token = localStorage.getItem("token");
+    const organizationId = localStorage.getItem("organizationId");
 
-    fetch(`${API}/projects`,{
-      headers:{
-        Authorization:`Bearer ${token}`
+    fetch(`${API}/projects?organizationId=${organizationId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
     })
       .then(res => res.json())
@@ -46,26 +47,27 @@ export default function Sidebar() {
 
         const storedProject = localStorage.getItem("projectId");
 
-        if(storedProject){
+        if (storedProject) {
           setSelectedProject(storedProject);
-        } else if(list.length > 0){
+        }
+        else if (list.length > 0) {
           setSelectedProject(list[0]._id);
-          localStorage.setItem("projectId",list[0]._id);
+          localStorage.setItem("projectId", list[0]._id);
         }
 
       });
 
-  },[]);
+  }, []);
 
   /* --------------------------
      PROJECT CHANGE
   -------------------------- */
 
-  const changeProject = (id:string) => {
+  const changeProject = (id: string) => {
 
     setSelectedProject(id);
 
-    localStorage.setItem("projectId",id);
+    localStorage.setItem("projectId", id);
 
     // reload dashboard data
     router.refresh();
@@ -89,10 +91,10 @@ export default function Sidebar() {
         <select
           className={styles.projectSelect}
           value={selectedProject || ""}
-          onChange={(e)=>changeProject(e.target.value)}
+          onChange={(e) => changeProject(e.target.value)}
         >
 
-          {projects.map((p)=>(
+          {projects.map((p) => (
             <option key={p._id} value={p._id}>
               {p.name}
             </option>
@@ -110,9 +112,8 @@ export default function Sidebar() {
 
           <div
             key={item.path}
-            className={`${styles.menuItem} ${
-              pathname === item.path ? styles.active : ""
-            }`}
+            className={`${styles.menuItem} ${pathname === item.path ? styles.active : ""
+              }`}
             onClick={() => router.push(item.path)}
           >
             {item.name}

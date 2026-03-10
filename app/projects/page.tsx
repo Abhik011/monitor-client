@@ -8,10 +8,10 @@ export default function ProjectsPage() {
     process.env.NEXT_PUBLIC_API_URL ||
     "http://localhost:4000";
 
-  const [projects,setProjects] = useState<any[]>([]);
-  const [name,setName] = useState("");
-  const [loading,setLoading] = useState(false);
-  const [showKey,setShowKey] = useState<any>({});
+  const [projects, setProjects] = useState<any[]>([]);
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showKey, setShowKey] = useState<any>({});
 
   const token =
     typeof window !== "undefined"
@@ -24,21 +24,39 @@ export default function ProjectsPage() {
 
   const loadProjects = async () => {
 
-    const res = await fetch(`${API}/projects`,{
-      headers:{
-        Authorization:`Bearer ${token}`
+  try {
+
+    const organizationId = localStorage.getItem("organizationId");
+
+    const res = await fetch(
+      `${API}/projects?organizationId=${organizationId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       }
-    });
+    );
+
+    if (!res.ok) {
+      console.error("Failed to load projects");
+      return;
+    }
 
     const data = await res.json();
 
     setProjects(data.projects || []);
 
-  };
+  } catch (err) {
 
-  useEffect(()=>{
+    console.error("Project fetch error", err);
+
+  }
+
+};
+
+  useEffect(() => {
     loadProjects();
-  },[]);
+  }, []);
 
   /* --------------------------
      CREATE PROJECT
@@ -46,20 +64,20 @@ export default function ProjectsPage() {
 
   const createProject = async () => {
 
-    if(!name) return;
+    if (!name) return;
 
     setLoading(true);
 
     const organizationId =
       localStorage.getItem("organizationId");
 
-    const res = await fetch(`${API}/projects`,{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        Authorization:`Bearer ${token}`
+    const res = await fetch(`${API}/projects`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
       },
-      body:JSON.stringify({
+      body: JSON.stringify({
         name,
         organizationId
       })
@@ -78,11 +96,11 @@ export default function ProjectsPage() {
      TOGGLE API KEY
   -------------------------- */
 
-  const toggleKey = (id:string) => {
+  const toggleKey = (id: string) => {
 
-    setShowKey((prev:any)=>({
+    setShowKey((prev: any) => ({
       ...prev,
-      [id]:!prev[id]
+      [id]: !prev[id]
     }));
 
   };
@@ -103,7 +121,7 @@ export default function ProjectsPage() {
           style={styles.input}
           placeholder="New project name"
           value={name}
-          onChange={(e)=>setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
         />
 
         <button
@@ -119,7 +137,7 @@ export default function ProjectsPage() {
 
       <div style={styles.grid}>
 
-        {projects.map((p)=>{
+        {projects.map((p) => {
 
           const visible = showKey[p._id];
 
@@ -147,7 +165,7 @@ export default function ProjectsPage() {
 
                   <button
                     style={styles.smallBtn}
-                    onClick={()=>toggleKey(p._id)}
+                    onClick={() => toggleKey(p._id)}
                   >
                     {visible ? "Hide" : "Reveal"}
                   </button>
@@ -158,7 +176,7 @@ export default function ProjectsPage() {
 
               <div style={styles.endpoint}>
 
-                POST /track/{p.apiKey.slice(0,10)}...
+                POST /track/{p.apiKey.slice(0, 10)}...
 
               </div>
 
@@ -180,90 +198,90 @@ export default function ProjectsPage() {
    STYLES
 -------------------------- */
 
-const styles:any = {
+const styles: any = {
 
-  wrapper:{
-    padding:40,
-    background:"#f8fafc",
-    minHeight:"100vh",
-    fontFamily:"Inter, sans-serif"
+  wrapper: {
+    padding: 40,
+    background: "#f8fafc",
+    minHeight: "100vh",
+    fontFamily: "Inter, sans-serif"
   },
 
-  title:{
-    fontSize:28,
-    fontWeight:600,
-    marginBottom:30
+  title: {
+    fontSize: 28,
+    fontWeight: 600,
+    marginBottom: 30
   },
 
-  createCard:{
-    display:"flex",
-    gap:10,
-    marginBottom:30
+  createCard: {
+    display: "flex",
+    gap: 10,
+    marginBottom: 30
   },
 
-  input:{
-    padding:10,
-    borderRadius:6,
-    border:"1px solid #e5e7eb",
-    flex:1
+  input: {
+    padding: 10,
+    borderRadius: 6,
+    border: "1px solid #e5e7eb",
+    flex: 1
   },
 
-  button:{
-    background:"#6366f1",
-    border:"none",
-    color:"#fff",
-    padding:"10px 18px",
-    borderRadius:6,
-    cursor:"pointer"
+  button: {
+    background: "#6366f1",
+    border: "none",
+    color: "#fff",
+    padding: "10px 18px",
+    borderRadius: 6,
+    cursor: "pointer"
   },
 
-  grid:{
-    display:"grid",
-    gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",
-    gap:20
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+    gap: 20
   },
 
-  card:{
-    background:"#fff",
-    padding:20,
-    borderRadius:10,
-    border:"1px solid #e5e7eb"
+  card: {
+    background: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    border: "1px solid #e5e7eb"
   },
 
-  apiSection:{
-    marginTop:15
+  apiSection: {
+    marginTop: 15
   },
 
-  label:{
-    fontSize:12,
-    color:"#6b7280"
+  label: {
+    fontSize: 12,
+    color: "#6b7280"
   },
 
-  apiRow:{
-    display:"flex",
-    alignItems:"center",
-    gap:10,
-    marginTop:6
+  apiRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 6
   },
 
-  apiKey:{
-    background:"#f1f5f9",
-    padding:"6px 10px",
-    borderRadius:6
+  apiKey: {
+    background: "#f1f5f9",
+    padding: "6px 10px",
+    borderRadius: 6
   },
 
-  smallBtn:{
-    border:"1px solid #e5e7eb",
-    background:"#fff",
-    padding:"5px 10px",
-    borderRadius:6,
-    cursor:"pointer"
+  smallBtn: {
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    padding: "5px 10px",
+    borderRadius: 6,
+    cursor: "pointer"
   },
 
-  endpoint:{
-    marginTop:15,
-    fontSize:12,
-    color:"#6b7280"
+  endpoint: {
+    marginTop: 15,
+    fontSize: 12,
+    color: "#6b7280"
   }
 
 };

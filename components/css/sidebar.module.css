@@ -1,11 +1,94 @@
+.menuItem {
+  position: relative;
+
+  padding: 10px 12px;
+  border-radius: 8px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  color: #374151;
+  text-decoration: none;
+
+  transition: all 0.2s ease;
+}
+
+/* icon container */
+
+.iconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+
+  border-radius: 8px;
+
+  transition: all 0.2s ease;
+}
+
+/* hover effect */
+
+.menuItem:hover .iconBox {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
+}
+
+/* active state */
+
+.active .iconBox {
+  background: #7c3aed;
+  color: white;
+}
+
+/* sliding indicator */
+
+.hoverIndicator {
+  position: absolute;
+
+  left: 0;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  width: 3px;
+  height: 0%;
+
+  background: #7c3aed;
+
+  border-radius: 4px;
+
+  transition: height 0.2s ease;
+}
+
+.menuItem:hover .hoverIndicator {
+  height: 60%;
+}
+
+.active .hoverIndicator {
+  height: 70%;
+}
+
 .sidebar {
-  width: 240px;
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  width: 260px;
   height: 100vh;
+
   background: #ffffff;
   border-right: 1px solid #e5e7eb;
+
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+
   padding: 20px;
+
+  overflow-y: auto;
 }
 
 .logo {
@@ -14,7 +97,12 @@
   margin-bottom: 30px;
   color: #7c3aed;
 }
-
+.logoi{
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  color: #989898;
+}
 .project {
   margin-bottom: 25px;
 }

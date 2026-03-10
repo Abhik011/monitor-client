@@ -1,4 +1,5 @@
 import Sidebar from "../../components/layout/Sidebar";
+import Header from "../../components/layout/Header";
 
 export default function Layout({ children }: any) {
 
@@ -8,8 +9,12 @@ export default function Layout({ children }: any) {
 
       <Sidebar />
 
-      <div style={{ flex: 1, padding: 0 }}>
+      <div style={{ flex: 1, marginLeft: 260 }}>
+
+        <Header />
+
         {children}
+
       </div>
 
     </div>

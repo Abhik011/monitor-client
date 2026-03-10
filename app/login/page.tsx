@@ -7,31 +7,31 @@ export default function LoginPage() {
 
   const router = useRouter();
 
-  const [email,setEmail] = useState("");
-  const [password,setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const [loading,setLoading] = useState(false);
-  const [error,setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const API =
     process.env.NEXT_PUBLIC_API_URL ||
     "http://localhost:4000";
 
-  const login = async (e:any) => {
+  const login = async (e: any) => {
 
     e.preventDefault();
 
     setLoading(true);
     setError("");
 
-    try{
+    try {
 
-      const res = await fetch(`${API}/auth/login`,{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
         },
-        body:JSON.stringify({
+        body: JSON.stringify({
           email,
           password
         })
@@ -39,15 +39,20 @@ export default function LoginPage() {
 
       const data = await res.json();
 
-      if(!res.ok){
+      if (!res.ok) {
         throw new Error(data.error || "Login failed");
       }
 
-      localStorage.setItem("token",data.token);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("organizationId", data.organizationId);
+
+      if (data.projects && data.projects.length > 0) {
+        localStorage.setItem("projectId", data.projects[0]._id);
+      }
 
       router.push("/dashboard");
 
-    }catch(err:any){
+    } catch (err: any) {
 
       setError(err.message);
 
@@ -76,7 +81,7 @@ export default function LoginPage() {
             placeholder="Email Address"
             type="email"
             value={email}
-            onChange={(e)=>setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
 
@@ -85,7 +90,7 @@ export default function LoginPage() {
             placeholder="Password"
             type="password"
             value={password}
-            onChange={(e)=>setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
 
@@ -111,7 +116,7 @@ export default function LoginPage() {
 
           <span
             style={styles.link}
-            onClick={()=>router.push("/signup")}
+            onClick={() => router.push("/signup")}
           >
             Create one
           </span>
@@ -126,79 +131,79 @@ export default function LoginPage() {
 
 }
 
-const styles:any = {
+const styles: any = {
 
-  wrapper:{
-    display:"flex",
-    justifyContent:"center",
-    alignItems:"center",
-    height:"100vh",
-    background:"#020617",
-    color:"#fff",
-    fontFamily:"Inter, sans-serif"
+  wrapper: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+    background: "#020617",
+    color: "#fff",
+    fontFamily: "Inter, sans-serif"
   },
 
-  card:{
-    width:420,
-    padding:40,
-    borderRadius:12,
-    background:"#0f172a",
-    border:"1px solid #1e293b"
+  card: {
+    width: 420,
+    padding: 40,
+    borderRadius: 12,
+    background: "#0f172a",
+    border: "1px solid #1e293b"
   },
 
-  title:{
-    fontSize:28,
-    marginBottom:10
+  title: {
+    fontSize: 28,
+    marginBottom: 10
   },
 
-  subtitle:{
-    fontSize:14,
-    opacity:0.7,
-    marginBottom:30
+  subtitle: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginBottom: 30
   },
 
-  form:{
-    display:"flex",
-    flexDirection:"column",
-    gap:15
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 15
   },
 
-  input:{
-    padding:12,
-    borderRadius:6,
-    border:"1px solid #334155",
-    background:"#020617",
-    color:"#fff"
+  input: {
+    padding: 12,
+    borderRadius: 6,
+    border: "1px solid #334155",
+    background: "#020617",
+    color: "#fff"
   },
 
-  button:{
-    marginTop:10,
-    padding:12,
-    borderRadius:8,
-    border:"none",
-    background:"#7c3aed",
-    color:"#fff",
-    cursor:"pointer",
-    fontWeight:600
+  button: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 8,
+    border: "none",
+    background: "#7c3aed",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: 600
   },
 
-  error:{
-    background:"#7f1d1d",
-    padding:10,
-    borderRadius:6,
-    fontSize:13
+  error: {
+    background: "#7f1d1d",
+    padding: 10,
+    borderRadius: 6,
+    fontSize: 13
   },
 
-  footer:{
-    marginTop:20,
-    fontSize:14,
-    opacity:0.8
+  footer: {
+    marginTop: 20,
+    fontSize: 14,
+    opacity: 0.8
   },
 
-  link:{
-    marginLeft:6,
-    color:"#7c3aed",
-    cursor:"pointer"
+  link: {
+    marginLeft: 6,
+    color: "#7c3aed",
+    cursor: "pointer"
   }
 
 };

@@ -16,6 +16,14 @@ import {
   ResponsiveContainer,
   Cell
 } from "recharts";
+import {
+  Activity,
+  Bug,
+  AlertTriangle,
+  Zap,
+  Timer,
+  Gauge
+} from "lucide-react";
 import io from "socket.io-client";
 
 export default function Dashboard() {
@@ -40,8 +48,8 @@ export default function Dashboard() {
   }, []);
 
   /* --------------------------
-     FETCH EVENTS
-  -------------------------- */
+    FETCH EVENTS
+ -------------------------- */
 
   const loadEvents = async () => {
 
@@ -59,7 +67,6 @@ export default function Dashboard() {
     );
 
     const data = await res.json();
-
     setEvents(data.events || []);
 
   };
@@ -211,6 +218,24 @@ export default function Dashboard() {
 
   });
 
+  const topErrorPages = Object.keys(errorsByPage).map((page) => ({
+    page,
+    count: errorsByPage[page].length
+  }));
+
+  const slowPages = events.filter(
+    (e) => e.type === "slow_page"
+  );
+
+  const eventsPerMinute = events.filter(e =>
+    Date.now() -
+    new Date(e.createdAt).getTime() <
+    60000
+  ).length;
+
+  const errorRate = totalEvents > 0
+    ? ((errors.length / totalEvents) * 100).toFixed(1)
+    : 0;
   return (
     <div style={styles.wrapper}>
       {/* MAIN */}
@@ -223,10 +248,19 @@ export default function Dashboard() {
 
         <div style={styles.metricGrid}>
 
-          <Card title="Total Events" value={totalEvents} />
-          <Card title="JS Errors" value={errors.length} />
-          <Card title="API Errors" value={apiErrors.length} />
-          <Card title="Slow APIs" value={slowApis.length} />
+          <Card title="Total Events" value={totalEvents} icon={<Activity size={30} />} />
+
+          <Card title="JS Errors" value={errors.length} icon={<Bug size={30} />} />
+
+          <Card title="API Errors" value={apiErrors.length} icon={<AlertTriangle size={30} />} />
+
+          <Card title="Error Rate" value={errorRate} icon={<Gauge size={30} />} />
+
+          <Card title="Slow APIs" value={slowApis.length} icon={<Timer size={30} />} />
+
+          <Card title="Slow Pages" value={slowPages.length} icon={<Zap size={30} />} />
+
+          <Card title="Events / Minute" value={eventsPerMinute} icon={<Activity size={30} />} />
 
         </div>
 
@@ -307,14 +341,14 @@ export default function Dashboard() {
                   axisLine={false}
                   tickLine={false}
                   stroke="#8b98ae"
-                   tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 10 }}
                 />
 
                 <YAxis
                   axisLine={false}
                   tickLine={false}
                   stroke="#9ca3af"
-                   tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 10 }}
                 />
 
                 <Tooltip
@@ -350,31 +384,73 @@ export default function Dashboard() {
 
           </ChartCard>
 
+          <ChartCard title="Top Error Pages">
+
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={topErrorPages}>
+
+                <XAxis
+                  dataKey="page"
+                  tick={{ fontSize: 10 }}
+                  stroke="#9ca3af"
+                />
+
+                <YAxis tick={{ fontSize: 10 }} />
+
+                <Tooltip />
+
+                <Bar dataKey="count" fill="#ef4444" radius={[6, 6, 0, 0]} />
+
+              </BarChart>
+            </ResponsiveContainer>
+
+          </ChartCard>
+
+          <ChartCard title="User Sessions Activity">
+
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={sessionData}>
+
+                <XAxis
+                  dataKey="session"
+                  tick={{ fontSize: 10 }}
+                  stroke="#9ca3af"
+                />
+
+                <YAxis tick={{ fontSize: 10 }} />
+
+                <Tooltip />
+
+                <Bar dataKey="events" fill="#6366f1" radius={[6, 6, 0, 0]} />
+
+              </BarChart>
+            </ResponsiveContainer>
+
+          </ChartCard>
         </div>
+        <div style={styles.chartcGrid}>
+          {/* COUNTRY */}
+          <ChartCard title="Errors by Country">
 
-        {/* COUNTRY */}
+            <ResponsiveContainer width="100%" height={250}>
 
-        <ChartCard title="Errors by Country">
+              <BarChart data={countryChart}>
 
-          <ResponsiveContainer width="100%" height={250}>
+                <CartesianGrid stroke="#333" />
 
-            <BarChart data={countryChart}>
+                <XAxis dataKey="country" stroke="#aaa" />
+                <YAxis stroke="#aaa" />
 
-              <CartesianGrid stroke="#333" />
+                <Tooltip />
 
-              <XAxis dataKey="country" stroke="#aaa" />
-              <YAxis stroke="#aaa" />
+                <Bar dataKey="value" fill="#f43f5e" />
 
-              <Tooltip />
+              </BarChart>
 
-              <Bar dataKey="value" fill="#f43f5e" />
+            </ResponsiveContainer>
 
-            </BarChart>
-
-          </ResponsiveContainer>
-
-        </ChartCard>
-
+          </ChartCard>
+        </div>
       </div>
 
     </div>
@@ -385,18 +461,17 @@ export default function Dashboard() {
    COMPONENTS
 -------------------------- */
 
-function Card({ title, value }: any) {
-
+function Card({ title, value, icon }: any) {
   return (
     <div style={styles.card}>
-
-      <div style={styles.cardTitle}>{title}</div>
-
+      <div style={{ display: "flex", gap: 50 }}>
+        <span style={styles.cardTitle}>{title}</span>
+        <span>{icon}</span>
+      </div>
       <div style={styles.cardValue}>{value}</div>
 
     </div>
   );
-
 }
 
 function ChartCard({ title, children }: any) {
@@ -405,16 +480,16 @@ function ChartCard({ title, children }: any) {
     <div style={styles.chartCard}>
 
       <h3 style={{
-          marginBottom: 10,
-          fontSize: 14,
-          fontWeight: 600,
-          color: "#374151",
-          fontFamily: "Inter, sans-serif",
-          letterSpacing: "0.2px"
-        }}
-        >
-          {title}
-          </h3>
+        marginBottom: 10,
+        fontSize: 14,
+        fontWeight: 600,
+        color: "#374151",
+        fontFamily: "Inter, sans-serif",
+        letterSpacing: "0.2px"
+      }}
+      >
+        {title}
+      </h3>
 
       {children}
 
@@ -451,13 +526,17 @@ const styles: any = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
     gap: 20,
-    marginBottom: 40,
+    marginBottom: 10,
   },
 
   chartGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: 30,
+    gap: 20,
+  },
+  chartcGrid: {
+    display: "grid",
+     marginTop: 20,
   },
 
   card: {
@@ -473,9 +552,9 @@ const styles: any = {
   },
 
   cardValue: {
-    fontSize: 26,
-    fontWeight: 700,
-    marginTop: 8,
+    fontSize: 30,
+    fontWeight: 800,
+    marginTop: 10,
   },
 
   chartCard: {
@@ -483,7 +562,7 @@ const styles: any = {
     padding: 20,
     borderRadius: 10,
     border: "1px solid #e5e7eb",
-    marginTop: 20,
+    marginTop: 10,
   }
 
 };

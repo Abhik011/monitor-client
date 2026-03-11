@@ -10,7 +10,9 @@ import {
   Code,
   FolderKanban,
   Settings,
-  LogOut
+  LogOut,
+  Flashlight,
+  ChartNoAxesColumnIncreasing
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -26,10 +28,18 @@ export default function Sidebar() {
   const [organizationName, setOrganizationName] = useState("Organization");
 
   const menu = [
-    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Developer", path: "/development", icon: Code },
-    { name: "Projects", path: "/projects", icon: FolderKanban }
-  ];
+  { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+
+  /* Monitoring */
+
+  { name: "Monitors", path: "/monitors", icon: ChartNoAxesColumnIncreasing },
+  { name: "Incidents", path: "/incidents", icon: FolderKanban },
+
+  /* Existing */
+
+  { name: "Developer", path: "/development", icon: Code },
+  { name: "Projects", path: "/projects", icon: FolderKanban }
+];
 
   /* --------------------------
      INIT LOAD

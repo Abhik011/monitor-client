@@ -108,7 +108,7 @@ export default function BillingPage(){
                 background:isCurrent ? "#9ca3af" : "#7c3aed"
               }}
               disabled={loading === p.value || isCurrent}
-              onClick={()=>upgrade(p.value)}
+              onClick={()=>upgrade(p.value)} 
               >
 
                 {isCurrent

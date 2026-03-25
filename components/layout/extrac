@@ -1,0 +1,9 @@
+ const active = pathname === item.path;
+
+          return (
+
+            <Link
+              key={item.path}
+              href={item.path}
+              className={`${styles.menuItem} ${active ? styles.active : ""}`}
+            >

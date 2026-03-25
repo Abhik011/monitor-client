@@ -110,7 +110,7 @@ export default function MonitorsPage() {
 
     return () => clearInterval(interval);
 
-  }, [selectedMonitor]);
+  }, []);
 
   /* ---------------- CREATE MONITOR ---------------- */
 

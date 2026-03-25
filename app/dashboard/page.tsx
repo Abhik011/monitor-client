@@ -30,9 +30,17 @@ export default function Dashboard() {
 
   const [events, setEvents] = useState<any[]>([]);
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  const webVitals = events.filter(e => e.type === "web_vital");
+  const slowResources = events.filter(e => e.type === "resource");
+  const rageClicks = events.filter(e => e.type === "rage_click");
   const API = process.env.NEXT_PUBLIC_API_URL;
-
+  const [totalEvents, setTotalEvents] = useState(0);
+  const [plan, setPlan] = useState("");
+  const [usage, setUsage] = useState(0);
+  const [limit, setLimit] = useState(0);
+  const [percent, setPercent] = useState(0);
   /* --------------------------
      LOAD PROJECT
   -------------------------- */
@@ -47,27 +55,70 @@ export default function Dashboard() {
 
   }, []);
 
+  const loadUsage = async () => {
+
+    try {
+
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(`${API}/billing/usage`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+
+      setPlan(data.plan);
+      setUsage(data.used);
+      setLimit(data.limit);
+      setPercent(data.percent);
+
+    } catch (err) {
+
+      console.error("Usage load error", err);
+
+    }
+
+  };
   /* --------------------------
     FETCH EVENTS
  -------------------------- */
 
   const loadEvents = async () => {
 
-    if (!projectId) return;
+    if (!projectId) {
+      setLoading(false);
+      return;
+    }
 
-    const token = localStorage.getItem("token");
+    try {
 
-    const res = await fetch(
-      `${API}/events?projectId=${projectId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        `${API}/events?projectId=${projectId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      }
-    );
+      );
 
-    const data = await res.json();
-    setEvents(data.events || []);
+      const data = await res.json();
+
+      setEvents(data.events || []);
+      setTotalEvents(data.totalEvents || 0);
+
+    } catch (err) {
+
+      console.error("Event load error:", err);
+
+    } finally {
+
+      setLoading(false);
+
+    }
 
   };
 
@@ -83,7 +134,8 @@ export default function Dashboard() {
 
       if (event.projectId === projectId) {
 
-        setEvents((prev) => [event, ...prev]);
+        setEvents((prev) => [event, ...prev].slice(0, 200));
+        setTotalEvents((prev) => prev + 1);
 
       }
 
@@ -102,6 +154,7 @@ export default function Dashboard() {
   useEffect(() => {
 
     loadEvents();
+    loadUsage();
 
     const interval = setInterval(loadEvents, 5000);
 
@@ -113,7 +166,7 @@ export default function Dashboard() {
      METRICS
   -------------------------- */
 
-  const totalEvents = events.length;
+
 
   const errors = events.filter((e) => e.type === "error");
 
@@ -261,11 +314,62 @@ export default function Dashboard() {
           <Card title="Slow Pages" value={slowPages.length} icon={<Zap size={30} />} />
 
           <Card title="Events / Minute" value={eventsPerMinute} icon={<Activity size={30} />} />
+          <Card title="Web Vitals" value={webVitals.length} icon={<Activity size={30} />} />
+          <Card title="Slow Resources" value={slowResources.length} icon={<Zap size={30} />} />
+          <Card title="Rage Clicks" value={rageClicks.length} icon={<AlertTriangle size={30} />} />
 
         </div>
 
         {/* CHARTS */}
+<div style={styles.planCard}>
 
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+
+              <div>
+
+                <h3 style={{ marginBottom: 6 }}>
+                  Plan Usage
+                </h3>
+
+                <p style={{ fontSize: 13, color: "#6b7280" }}>
+                  {plan} Plan
+                </p>
+
+              </div>
+
+              <button
+                onClick={() => window.location.href = "/billing"}
+                style={styles.upgradeBtn}
+              >
+                Upgrade
+              </button>
+
+            </div>
+
+            <div style={{ marginTop: 15 }}>
+
+              <div style={{
+                height: 8,
+                background: "#e5e7eb",
+                borderRadius: 6,
+                overflow: "hidden"
+              }}>
+                <div style={{
+                  width: `${percent}%`,
+                  height: "100%",
+                  background: "#6366f1"
+                }} />
+              </div>
+
+              <p style={{ marginTop: 8, fontSize: 12, color: "#6b7280" }}>
+
+                {usage.toLocaleString()} / {limit.toLocaleString()} events used
+
+              </p>
+
+            </div>
+
+          </div>
         <div style={styles.chartGrid}>
 
           <ChartCard title="API Latency">
@@ -427,6 +531,10 @@ export default function Dashboard() {
             </ResponsiveContainer>
 
           </ChartCard>
+
+          {/* PLAN USAGE */}
+
+          
         </div>
         <div style={styles.chartcGrid}>
           {/* COUNTRY */}
@@ -536,7 +644,7 @@ const styles: any = {
   },
   chartcGrid: {
     display: "grid",
-     marginTop: 20,
+    marginTop: 20,
   },
 
   card: {

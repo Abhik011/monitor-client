@@ -11,8 +11,15 @@ import {
   FolderKanban,
   Settings,
   LogOut,
-  Flashlight,
-  ChartNoAxesColumnIncreasing
+  Activity,
+  Bug,
+  Zap,
+  Timer,
+  Globe,
+  AlertTriangle,
+  ChartNoAxesColumnIncreasing,
+  CreditCard,
+  Database
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -27,87 +34,124 @@ export default function Sidebar() {
 
   const [organizationName, setOrganizationName] = useState("Organization");
 
+  /* --------------------------
+     MENU STRUCTURE
+  -------------------------- */
+
   const menu = [
-  { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
 
-  /* Monitoring */
+    {
+      section: "Overview",
+      items: [
+        { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard }
+      ]
+    },
 
-  { name: "Monitors", path: "/monitors", icon: ChartNoAxesColumnIncreasing },
-  { name: "Incidents", path: "/incidents", icon: FolderKanban },
+    {
+      section: "Monitoring",
+      items: [
+        { name: "Events", path: "/events", icon: Activity },
+        { name: "Errors", path: "/errors", icon: Bug },
+        { name: "Performance", path: "/performance", icon: Zap },
+        { name: "Sessions", path: "/sessions", icon: Timer }
+      ]
+    },
 
-  /* Existing */
+    {
+      section: "Reliability",
+      items: [
+        { name: "Monitors", path: "/monitors", icon: ChartNoAxesColumnIncreasing },
+        { name: "Incidents", path: "/incidents", icon: AlertTriangle },
+        { name: "Alerts", path: "/alerts", icon: Globe }
+      ]
+    },
 
-  { name: "Developer", path: "/development", icon: Code },
-  { name: "Projects", path: "/projects", icon: FolderKanban }
-];
+    {
+      section: "Analytics",
+      items: [
+        { name: "API Monitoring", path: "/api", icon: Activity },
+        { name: "Resources", path: "/resources", icon: Database }
+      ]
+    },
+
+    {
+      section: "Development",
+      items: [
+        { name: "Developer", path: "/development", icon: Code },
+        { name: "Projects", path: "/projects", icon: FolderKanban }
+      ]
+    },
+
+    {
+      section: "Account",
+      items: [
+        { name: "Usage", path: "/usage", icon: ChartNoAxesColumnIncreasing },
+        { name: "Billing", path: "/billing", icon: CreditCard }
+      ]
+    }
+
+  ];
 
   /* --------------------------
      INIT LOAD
   -------------------------- */
 
-useEffect(() => {
+  useEffect(() => {
 
-  const token = localStorage.getItem("token");
-  const organizationId = localStorage.getItem("organizationId");
+    const token = localStorage.getItem("token");
+    const organizationId = localStorage.getItem("organizationId");
 
-  /* LOAD ORG NAME */
+    const storedOrg = localStorage.getItem("organizationName");
 
-  const storedOrg = localStorage.getItem("organizationName");
+    if (storedOrg) {
+      setOrganizationName(storedOrg);
+    }
+    else {
 
-  if (storedOrg) {
-    setOrganizationName(storedOrg);
-  } else {
+      fetch(`${API}/organizations/${organizationId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
 
-    fetch(`${API}/organizations/${organizationId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+          if (data?.name) {
+
+            setOrganizationName(data.name);
+            localStorage.setItem("organizationName", data.name);
+
+          }
+
+        });
+
+    }
+
+    /* LOAD PROJECTS */
+
+    fetch(`${API}/projects?organizationId=${organizationId}`, {
+      headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
       .then(data => {
 
-        if (data?.name) {
+        const list = data.projects || [];
 
-          setOrganizationName(data.name);
+        setProjects(list);
 
-          localStorage.setItem("organizationName", data.name);
+        const storedProject = localStorage.getItem("projectId");
+
+        if (storedProject) {
+          setSelectedProject(storedProject);
+        }
+        else if (list.length > 0) {
+
+          setSelectedProject(list[0]._id);
+          localStorage.setItem("projectId", list[0]._id);
 
         }
 
       });
 
-  }
-
-  /* LOAD PROJECTS */
-
-  fetch(`${API}/projects?organizationId=${organizationId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  })
-    .then(res => res.json())
-    .then(data => {
-
-      const list = data.projects || [];
-
-      setProjects(list);
-
-      const storedProject = localStorage.getItem("projectId");
-
-      if (storedProject) {
-        setSelectedProject(storedProject);
-      }
-      else if (list.length > 0) {
-
-        setSelectedProject(list[0]._id);
-
-        localStorage.setItem("projectId", list[0]._id);
-
-      }
-
-    });
-
-}, []);
+  }, []);
 
   /* --------------------------
      PROJECT CHANGE
@@ -123,20 +167,23 @@ useEffect(() => {
 
   };
 
+  /* --------------------------
+     RENDER
+  -------------------------- */
+
   return (
 
     <div className={styles.sidebar}>
 
-      {/* ORG NAME */}
+      {/* LOGO */}
 
       <div className={styles.logoRow}>
         <div className={styles.logo}>
           <h2>Monitor</h2>
-           <div className={styles.logoi}>
-          <h4>By Creonox Technologies</h4>
+          <div className={styles.logoi}>
+            <h4>By Creonox Technologies</h4>
           </div>
         </div>
-      
       </div>
 
       {/* PROJECT SELECTOR */}
@@ -165,30 +212,45 @@ useEffect(() => {
 
       <nav className={styles.menu}>
 
-        {menu.map((item) => {
+        {menu.map((group) => (
 
-          const Icon = item.icon;
-          const active = pathname === item.path;
+          <div key={group.section}>
 
-          return (
+            <div className={styles.menuSection}>
+              {group.section}
+            </div>
+            
+            {group.items.map((item) => {
 
-            <Link
-              key={item.path}
-              href={item.path}
-              className={`${styles.menuItem} ${active ? styles.active : ""}`}
-            >
+              const Icon = item.icon;
 
-              <div className={styles.iconBox}>
-                <Icon size={18} />
-              </div>
+              const active =
+                pathname === item.path ||
+                pathname.startsWith(item.path + "/");
 
-              <span>{item.name}</span>
+              return (
 
-            </Link>
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={`${styles.menuItem} ${active ? styles.active : ""}`}
+                >
 
-          );
+                  <div className={styles.iconBox}>
+                    <Icon size={18} />
+                  </div>
 
-        })}
+                  <span>{item.name}</span>
+
+                </Link>
+
+              );
+
+            })}
+
+          </div>
+
+        ))}
 
       </nav>
 
